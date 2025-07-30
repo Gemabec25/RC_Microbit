@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control Remoto Bluetooth</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+        }
+
+        h1 {
+            color: white;
+            margin-bottom: 30px;
+            font-size: 2rem;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .status {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            color: white;
+            font-weight: bold;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .status.connected {
+            background: rgba(76, 175, 80, 0.3);
+            border-color: rgba(76, 175, 80, 0.5);
+        }
+
+        .status.disconnected {
+            background: rgba(244, 67, 54, 0.3);
+            border-color: rgba(244, 67, 54, 0.5);
+        }
+
+        .connect-btn {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.1rem;
+            border-radius: 25px;
+            cursor: pointer;
+            margin-bottom: 30px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .connect-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .connect-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            gap: 15px;
+            max-width: 300px;
+            margin: 0 auto;
+            margin-bottom: 20px;
+        }
+
+        .extra-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+            max-width: 300px;
+            margin: 0 auto;
+        }
+
+        .control-btn {
+            background: linear-gradient(45deg, #2196F3, #1976D2);
+            color: white;
+            border: none;
+            padding: 18px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .control-btn:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .control-btn:active {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .control-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .control-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.3s, height 0.3s;
+        }
+
+        .control-btn:active::before {
+            width: 100px;
+            height: 100px;
+        }
+
+        .forward { grid-column: 2; grid-row: 1; }
+        .left { grid-column: 1; grid-row: 2; }
+        .right { grid-column: 3; grid-row: 2; }
+        .backward { grid-column: 2; grid-row: 2; }
+        .stop { 
+            grid-column: 1; 
+            grid-row: 1; 
+            background: linear-gradient(45deg, #607D8B, #455A64);
+        }
+        .lights_off {
+            grid-column: 3;
+            grid-row: 1;
+            background: linear-gradient(45deg, #607D8B, #455A64);
+        }
+
+        .extra-controls .control-btn {
+            font-size: 0.8rem;
+            padding: 15px;
+        }
+        .white-light {
+
+            background: linear-gradient(45deg, #fcd47e, #fcd47e) !important;
+        }
+        .red-light {
+
+            background: linear-gradient(45deg, #d93734, #d93734) !important;
+        }
+
+        .green-light {
+            background: linear-gradient(45deg, #4CAF50, #388E3C) !important;
+        }
+
+        .log {
+            background: rgba(0, 0, 0, 0.2);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            max-height: 100px;
+            overflow-y: auto;
+            text-align: left;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 20px;
+            }
+            
+            .controls {
+                gap: 10px;
+            }
+            
+            .control-btn {
+                padding: 15px;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 Control Remoto para Cutebot PRO by GmedranoTIC</h1>
+
+        <div id="status" class="status disconnected">
+            Desconectado
+        </div>
+
+        <button id="connectBtn" class="connect-btn">
+            Conectar micro:bit
+        </button>s
+
+        <div class="controls">
+            <button class="control-btn forward" data-command="f" disabled>
+                🔼<br>Adelante
+            </button>
+            <button class="control-btn left" data-command="l" disabled>
+                ◀<br>Izquierda
+            </button>
+            <button class="control-btn right" data-command="r" disabled>
+                ▶<br>Derecha
+            </button>
+            <button class="control-btn backward" data-command="b" disabled>
+                🔽<br>Atrás
+            </button>
+            <button class="control-btn extra stop" data-command="C" disabled>
+                🛑<br>STOP
+            </button>
+            <button class="control-btn lights_off" data-command="B" disabled>
+                💡<br>Luces OFF
+            </button>
+        </div>
+
+        <div class="extra-controls">
+            <button class="control-btn extra white-light" data-command="A" disabled>
+                💡<br>Luces Blancas
+            </button>
+            <button class="control-btn extra red-light" data-command="Z" disabled>
+                💡<br>Luces Rojas
+            </button>
+            <button class="control-btn extra green-light" data-command="D" disabled>
+                💡<br>Luces Verdes
+            </button>
+
+        </div>
+
+        <div id="log" class="log">
+            Registro de comandos:<br>
+        </div>
+    </div>
+
+    <script>
+        class BluetoothRemote {
+            constructor() {
+                this.device = null;
+                this.server = null;
+                this.service = null;
+                this.characteristic = null;
+                this.isConnected = false;
+
+                this.connectBtn = document.getElementById('connectBtn');
+                this.statusDiv = document.getElementById('status');
+                this.controlBtns = document.querySelectorAll('.control-btn');
+                this.logDiv = document.getElementById('log');
+
+                this.init();
+            }
+
+            init() {
+                this.connectBtn.addEventListener('click', () => this.connect());
+                
+                this.controlBtns.forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const command = btn.dataset.command;
+                        this.sendCommand(command);
+                    });
+                });
+
+                // Verificar si el navegador soporta Web Bluetooth
+                if (!navigator.bluetooth) {
+                    this.log('⚠️ Web Bluetooth no está disponible en este navegador');
+                    this.connectBtn.disabled = true;
+                    this.connectBtn.textContent = 'Bluetooth no disponible';
+                }
+
+                this.log('📘 Listo para conectar con micro:bit');
+                this.log('🤖 Compatible con CutebotPro');
+                this.log('💡 Asegúrate de que tu micro:bit tenga Bluetooth habilitado');
+            }
+
+            async connect() {
+                try {
+                    this.log('🔍 Buscando micro:bit...');
+                    this.connectBtn.disabled = true;
+                    this.connectBtn.textContent = 'Conectando...';
+
+                    // Solicitar dispositivo micro:bit
+                    this.device = await navigator.bluetooth.requestDevice({
+                        filters: [
+                            { namePrefix: 'BBC micro:bit' }
+                        ],
+                        optionalServices: [
+                            '6e400001-b5a3-f393-e0a9-e50e24dcca9e' // Nordic UART Service
+                        ]
+                    });
+
+                    this.log(`📱 Dispositivo seleccionado: ${this.device.name}`);
+
+                    // Conectar al servidor GATT
+                    this.server = await this.device.gatt.connect();
+                    this.log('🔗 Conectado al servidor GATT');
+
+                    // Obtener el servicio UART de Nordic
+                    this.service = await this.server.getPrimaryService('6e400001-b5a3-f393-e0a9-e50e24dcca9e');
+                    this.log('🛠️ Servicio UART obtenido');
+
+                    // Obtener la característica RX (para enviar datos A LA micro:bit)
+                    this.characteristic = await this.service.getCharacteristic('6e400003-b5a3-f393-e0a9-e50e24dcca9e');
+                    this.log('✅ Característica RX obtenida');
+
+                    this.isConnected = true;
+                    this.updateUI();
+
+                    // Escuchar desconexión
+                    this.device.addEventListener('gattserverdisconnected', () => {
+                        this.handleDisconnection();
+                    });
+
+                } catch (error) {
+                    this.log(`❌ Error de conexión: ${error.message}`);
+                    this.connectBtn.disabled = false;
+                    this.connectBtn.textContent = 'Conectar micro:bit';
+                }
+            }
+
+            async sendCommand(command) {
+                if (!this.isConnected || !this.characteristic) {
+                    this.log('❌ No hay conexión Bluetooth');
+                    return;
+                }
+
+                try {
+                    // Añadir el delimitador # que espera la micro:bit
+                    const commandWithDelimiter = command + '#';
+                    const encoder = new TextEncoder();
+                    const data = encoder.encode(commandWithDelimiter);
+                    
+                    await this.characteristic.writeValue(data);
+                    this.log(`📤 Comando enviado: "${command}"`);
+                    
+                    // Efecto visual en el botón
+                    const btn = document.querySelector(`[data-command="${command}"]`);
+                    btn.style.transform = 'scale(0.95)';
+                    setTimeout(() => {
+                        btn.style.transform = '';
+                    }, 150);
+
+                } catch (error) {
+                    this.log(`❌ Error enviando comando: ${error.message}`);
+                }
+            }
+
+            handleDisconnection() {
+                this.log('🔌 Dispositivo desconectado');
+                this.isConnected = false;
+                this.device = null;
+                this.server = null;
+                this.service = null;
+                this.characteristic = null;
+                this.updateUI();
+            }
+
+            updateUI() {
+                if (this.isConnected) {
+                    this.statusDiv.textContent = `Conectado a: ${this.device.name}`;
+                    this.statusDiv.className = 'status connected';
+                    this.connectBtn.textContent = 'Desconectar';
+                    this.connectBtn.disabled = false;
+                    
+                    this.controlBtns.forEach(btn => {
+                        btn.disabled = false;
+                    });
+
+                    // Cambiar función del botón de conexión
+                    this.connectBtn.onclick = () => this.disconnect();
+                } else {
+                    this.statusDiv.textContent = 'Desconectado';
+                    this.statusDiv.className = 'status disconnected';
+                    this.connectBtn.textContent = 'Conectar micro:bit';
+                    this.connectBtn.disabled = false;
+                    
+                    this.controlBtns.forEach(btn => {
+                        btn.disabled = true;
+                    });
+
+                    // Restaurar función del botón de conexión
+                    this.connectBtn.onclick = () => this.connect();
+                }
+            }
+
+            disconnect() {
+                if (this.device && this.device.gatt.connected) {
+                    this.device.gatt.disconnect();
+                }
+                this.handleDisconnection();
+            }
+
+            log(message) {
+                const timestamp = new Date().toLocaleTimeString();
+                this.logDiv.innerHTML += `[${timestamp}] ${message}<br>`;
+                this.logDiv.scrollTop = this.logDiv.scrollHeight;
+            }
+        }
+
+        // Inicializar la aplicación cuando se carga la página
+        document.addEventListener('DOMContentLoaded', () => {
+            new BluetoothRemote();
+        });
+    </script>
+</body>
+</html>
